@@ -41,38 +41,38 @@
 }
 
 .dark {
-  --background: hsl(240 10% 3.9%);
+  --background: hsl(250 50% 5%);
   --foreground: hsl(0 0% 98%);
-  --card: hsl(240 10% 3.9%);
+  --card: hsl(250 40% 8%);
   --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(240 10% 3.9%);
+  --popover: hsl(250 40% 8%);
   --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(240 5.9% 10%);
-  --secondary: hsl(240 3.7% 15.9%);
+  --primary: hsl(263 70% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(250 30% 15%);
   --secondary-foreground: hsl(0 0% 98%);
-  --muted: hsl(240 3.7% 15.9%);
-  --muted-foreground: hsl(240 5% 64.9%);
-  --accent: hsl(240 3.7% 15.9%);
-  --accent-foreground: hsl(0 0% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
+  --muted: hsl(250 30% 15%);
+  --muted-foreground: hsl(240 5% 65%);
+  --accent: hsl(263 70% 60%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(0 62.8% 50%);
   --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(240 3.7% 15.9%);
-  --input: hsl(240 3.7% 15.9%);
-  --ring: hsl(240 4.9% 83.9%);
-  --chart-1: hsl(220 70% 50%);
-  --chart-2: hsl(160 60% 45%);
-  --chart-3: hsl(30 80% 55%);
-  --chart-4: hsl(280 65% 60%);
+  --border: hsl(250 30% 18%);
+  --input: hsl(250 30% 15%);
+  --ring: hsl(263 70% 60%);
+  --chart-1: hsl(263 70% 60%);
+  --chart-2: hsl(210 70% 55%);
+  --chart-3: hsl(280 65% 60%);
+  --chart-4: hsl(190 60% 50%);
   --chart-5: hsl(340 75% 55%);
-  --sidebar-background: hsl(240 5.9% 10%);
+  --sidebar-background: hsl(250 40% 8%);
   --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary: hsl(263 70% 60%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent: hsl(250 30% 15%);
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --sidebar-border: hsl(250 30% 18%);
+  --sidebar-ring: hsl(263 70% 60%);
 }
 
 @theme inline {
@@ -119,6 +119,7 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
@@ -128,6 +129,7 @@
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -138,6 +140,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
