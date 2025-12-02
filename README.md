@@ -6,6 +6,8 @@ A web application for distributing SOL payments among 2-5 wallets according to s
 
 - 🔐 **Wallet Integration** - Connect with Phantom, Solflare, and other popular Solana wallets
 - 💰 **Flexible Distribution** - Split payments among 2-5 recipients with custom percentages
+- 📖 **Address Book** - Save and manage your frequently used recipient addresses
+- 📜 **Transaction History** - Keep track of all your past split payments
 - ✅ **Real-time Validation** - Instant feedback on addresses and percentage allocation
 - 🎨 **Modern UI** - Premium dark theme with smooth animations
 - 🔍 **Transaction Tracking** - View confirmed transactions on Solana Explorer
@@ -46,10 +48,11 @@ bun start
 ## Usage
 
 1. **Connect Wallet** - Click the wallet button to connect your Solana wallet
-2. **Enter Amount** - Specify the total amount of SOL to split
-3. **Add Recipients** - Enter wallet addresses and set percentages (must sum to 100%)
-4. **Send Payment** - Review and approve the transaction in your wallet
-5. **Confirm** - View the transaction confirmation on Solana Explorer
+2. **Manage Contacts** - Use the "Contacts" tab to save frequently used addresses
+3. **Enter Amount** - Specify the total amount of SOL to split
+4. **Add Recipients** - Enter wallet addresses manually or select from your Address Book
+5. **Send Payment** - Review and approve the transaction in your wallet
+6. **Track History** - View your past transactions in the "History" tab
 
 ## Network Configuration
 

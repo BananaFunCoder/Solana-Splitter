@@ -1,9 +1,39 @@
 import { useState, useEffect } from 'react';
+import { useStorage } from '@/context/StorageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { validateSolanaAddress } from '@/lib/solana';
-import { X } from 'lucide-react';
+import { X, BookUser } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+function AddressBookSelect({ onSelect }: { onSelect: (address: string) => void }) {
+    const { contacts } = useStorage();
+
+    if (contacts.length === 0) return null;
+
+    return (
+        <Select onValueChange={onSelect}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Address Book" />
+            </SelectTrigger>
+            <SelectContent>
+                {contacts.map((contact) => (
+                    <SelectItem key={contact.id} value={contact.address}>
+                        {contact.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
 
 interface RecipientInputProps {
     index: number;
@@ -45,9 +75,12 @@ export function RecipientInput({
             <div className="flex items-start gap-4">
                 <div className="flex-1 space-y-3">
                     <div className="space-y-2">
-                        <Label htmlFor={`address-${index}`} className="text-sm font-medium">
-                            Recipient {index + 1} Address
-                        </Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor={`address-${index}`} className="text-sm font-medium">
+                                Recipient {index + 1} Address
+                            </Label>
+                            <AddressBookSelect onSelect={onAddressChange} />
+                        </div>
                         <Input
                             id={`address-${index}`}
                             type="text"
@@ -56,8 +89,8 @@ export function RecipientInput({
                             onChange={(e) => onAddressChange(e.target.value)}
                             onBlur={handleAddressBlur}
                             className={`font-mono text-sm ${touched && !isValidAddress && address
-                                    ? 'border-red-500 focus-visible:ring-red-500'
-                                    : ''
+                                ? 'border-red-500 focus-visible:ring-red-500'
+                                : ''
                                 }`}
                         />
                         {touched && !isValidAddress && address && (

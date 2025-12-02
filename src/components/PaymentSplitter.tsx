@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useStorage } from '@/context/StorageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RecipientInput } from './RecipientInput';
-import { TransactionStatus, TransactionState } from './TransactionStatus';
+import { TransactionStatus, type TransactionState } from './TransactionStatus';
 import { WalletButton } from './WalletButton';
-import { Recipient, buildSplitTransaction, solToLamports, validateSolanaAddress } from '@/lib/solana';
+import type { Recipient } from '@/lib/solana';
+import { buildSplitTransaction, solToLamports, validateSolanaAddress } from '@/lib/solana';
 import { validateRecipients, validateAmount } from '@/lib/validation';
 import { Plus, Send } from 'lucide-react';
 
 export function PaymentSplitter() {
+    const { connection } = useConnection();
     const { publicKey, sendTransaction, connected } = useWallet();
+    const { addToHistory } = useStorage();
     const [amount, setAmount] = useState('');
     const [recipients, setRecipients] = useState<Recipient[]>([
         { address: '', percentage: 50 },
@@ -91,7 +95,7 @@ export function PaymentSplitter() {
             const transaction = await buildSplitTransaction(publicKey, recipients, totalLamports);
 
             setTransactionState('awaiting-approval');
-            const sig = await sendTransaction(transaction, { skipPreflight: false });
+            const sig = await sendTransaction(transaction, connection, { skipPreflight: false });
 
             setSignature(sig);
             setTransactionState('processing');
@@ -100,6 +104,12 @@ export function PaymentSplitter() {
             // For now, we'll just wait a bit and assume success
             setTimeout(() => {
                 setTransactionState('confirmed');
+                addToHistory({
+                    signature: sig,
+                    amount: amountNum,
+                    recipients: recipients,
+                    status: 'success'
+                });
             }, 3000);
 
         } catch (err: any) {
