@@ -2,7 +2,7 @@ import { useStorage } from '@/context/StorageContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getExplorerUrl } from '@/lib/solana';
-import { ExternalLink, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ExternalLink, Trash2, Clock, CheckCircle, XCircle, Download } from 'lucide-react';
 import { truncateAddress } from '@/lib/validation';
 
 export function TransactionHistory() {
@@ -22,6 +22,34 @@ export function TransactionHistory() {
         );
     }
 
+    const handleExportCSV = () => {
+        if (history.length === 0) return;
+
+        const headers = ['Date', 'Status', 'Amount (SOL)', 'Signature', 'Recipients'];
+        const rows = history.map(record => [
+            new Date(record.timestamp).toLocaleString(),
+            record.status,
+            record.amount,
+            record.signature,
+            record.recipients.map(r => `${r.address} (${r.percentage}%)`).join('; ')
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `solana_splitter_history_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -29,6 +57,10 @@ export function TransactionHistory() {
                 <Button variant="destructive" size="sm" onClick={clearHistory} className="gap-2">
                     <Trash2 className="h-4 w-4" />
                     Clear History
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Export CSV
                 </Button>
             </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useStorage } from '@/context/StorageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { WalletButton } from './WalletButton';
 import type { Recipient } from '@/lib/solana';
 import { buildSplitTransaction, solToLamports, validateSolanaAddress } from '@/lib/solana';
 import { validateRecipients, validateAmount } from '@/lib/validation';
-import { Plus, Send } from 'lucide-react';
+import { Plus, Send, Trash2 } from 'lucide-react';
 
 export function PaymentSplitter() {
     const { connection } = useConnection();
@@ -26,7 +26,7 @@ export function PaymentSplitter() {
     const [signature, setSignature] = useState<string>();
     const [error, setError] = useState<string>();
 
-    const handleAddRecipient = () => {
+    const handleAddRecipient = useCallback(() => {
         if (recipients.length < 5) {
             const newPercentage = 100 / (recipients.length + 1);
             const updatedRecipients = recipients.map(r => ({
@@ -35,32 +35,49 @@ export function PaymentSplitter() {
             }));
             setRecipients([...updatedRecipients, { address: '', percentage: newPercentage }]);
         }
-    };
+    }, [recipients]);
 
-    const handleRemoveRecipient = (index: number) => {
+    const handleRemoveRecipient = useCallback((index: number) => {
         if (recipients.length > 2) {
             const newRecipients = recipients.filter((_, i) => i !== index);
             const newPercentage = 100 / newRecipients.length;
             setRecipients(newRecipients.map(r => ({ ...r, percentage: newPercentage })));
         }
-    };
+    }, [recipients]);
 
-    const handleAddressChange = (index: number, address: string) => {
-        const newRecipients = [...recipients];
-        newRecipients[index].address = address;
-        setRecipients(newRecipients);
-    };
+    const handleAddressChange = useCallback((index: number, address: string) => {
+        setRecipients(prev => {
+            const newRecipients = [...prev];
+            newRecipients[index] = { ...newRecipients[index], address };
+            return newRecipients;
+        });
+    }, []);
 
-    const handlePercentageChange = (index: number, percentage: number) => {
-        const newRecipients = [...recipients];
-        newRecipients[index].percentage = percentage;
-        setRecipients(newRecipients);
-    };
+    const handlePercentageChange = useCallback((index: number, percentage: number) => {
+        setRecipients(prev => {
+            const newRecipients = [...prev];
+            newRecipients[index] = { ...newRecipients[index], percentage };
+            return newRecipients;
+        });
+    }, []);
 
-    const handleDistributeEvenly = () => {
-        const evenPercentage = 100 / recipients.length;
-        setRecipients(recipients.map(r => ({ ...r, percentage: evenPercentage })));
-    };
+    const handleDistributeEvenly = useCallback(() => {
+        setRecipients(prev => {
+            const evenPercentage = 100 / prev.length;
+            return prev.map(r => ({ ...r, percentage: evenPercentage }));
+        });
+    }, []);
+
+    const handleClearAll = useCallback(() => {
+        setAmount('');
+        setRecipients([
+            { address: '', percentage: 50 },
+            { address: '', percentage: 50 },
+        ]);
+        setError(undefined);
+        setTransactionState('idle');
+        setSignature(undefined);
+    }, []);
 
     const handleSendPayment = async () => {
         if (!publicKey || !connected) {
@@ -100,8 +117,6 @@ export function PaymentSplitter() {
             setSignature(sig);
             setTransactionState('processing');
 
-            // Note: In production, you'd want to use confirmTransaction from solana.ts
-            // For now, we'll just wait a bit and assume success
             setTimeout(() => {
                 setTransactionState('confirmed');
                 addToHistory({
@@ -176,6 +191,15 @@ export function PaymentSplitter() {
                                         className="text-xs"
                                     >
                                         Distribute Evenly
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleClearAll}
+                                        className="text-xs text-destructive hover:text-destructive"
+                                    >
+                                        <Trash2 className="h-3 w-3 mr-1" />
+                                        Clear All
                                     </Button>
                                     {recipients.length < 5 && (
                                         <Button

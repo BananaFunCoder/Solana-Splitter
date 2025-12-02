@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useStorage } from '@/context/StorageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function AddressBookSelect({ onSelect }: { onSelect: (address: string) => void }) {
+const AddressBookSelect = memo(function AddressBookSelect({ onSelect }: { onSelect: (address: string) => void }) {
     const { contacts } = useStorage();
 
     if (contacts.length === 0) return null;
@@ -32,7 +32,7 @@ function AddressBookSelect({ onSelect }: { onSelect: (address: string) => void }
             </SelectContent>
         </Select>
     );
-}
+});
 
 
 interface RecipientInputProps {
@@ -45,7 +45,7 @@ interface RecipientInputProps {
     canRemove: boolean;
 }
 
-export function RecipientInput({
+export const RecipientInput = memo(function RecipientInput({
     index,
     address,
     percentage,
@@ -144,4 +144,4 @@ export function RecipientInput({
             </div>
         </div>
     );
-}
+});
