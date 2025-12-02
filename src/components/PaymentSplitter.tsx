@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { useStorage } from '@/context/StorageContext';
+import { useStorage, Preset } from '@/context/StorageContext';
+import { usePrice } from '@/context/PriceContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,29 @@ import { WalletButton } from './WalletButton';
 import type { Recipient } from '@/lib/solana';
 import { buildSplitTransaction, solToLamports, validateSolanaAddress } from '@/lib/solana';
 import { validateRecipients, validateAmount } from '@/lib/validation';
-import { Plus, Send, Trash2 } from 'lucide-react';
+import { Plus, Send, Trash2, Save, FolderOpen } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export function PaymentSplitter() {
     const { connection } = useConnection();
     const { publicKey, sendTransaction, connected } = useWallet();
-    const { addToHistory } = useStorage();
+    const { addToHistory, presets, addPreset } = useStorage();
+    const { price: solPrice } = usePrice();
     const [amount, setAmount] = useState('');
     const [recipients, setRecipients] = useState<Recipient[]>([
         { address: '', percentage: 50 },
@@ -25,6 +43,9 @@ export function PaymentSplitter() {
     const [transactionState, setTransactionState] = useState<TransactionState>('idle');
     const [signature, setSignature] = useState<string>();
     const [error, setError] = useState<string>();
+    const [presetName, setPresetName] = useState('');
+    const [isSavePresetOpen, setIsSavePresetOpen] = useState(false);
+    const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
     const handleAddRecipient = useCallback(() => {
         if (recipients.length < 5) {
@@ -77,7 +98,25 @@ export function PaymentSplitter() {
         setError(undefined);
         setTransactionState('idle');
         setSignature(undefined);
+        setIsClearDialogOpen(false);
     }, []);
+
+    const handleSavePreset = () => {
+        if (!presetName.trim()) return;
+        addPreset({
+            name: presetName,
+            recipients: recipients
+        });
+        setPresetName('');
+        setIsSavePresetOpen(false);
+    };
+
+    const handleLoadPreset = (presetId: string) => {
+        const preset = presets.find(p => p.id === presetId);
+        if (preset) {
+            setRecipients(preset.recipients);
+        }
+    };
 
     const handleSendPayment = async () => {
         if (!publicKey || !connected) {
@@ -171,6 +210,11 @@ export function PaymentSplitter() {
                                     className="text-lg font-semibold"
                                 />
                             </div>
+                            {solPrice && amount && (
+                                <p className="text-sm text-muted-foreground text-right">
+                                    ≈ ${(parseFloat(amount) * solPrice).toFixed(2)} USD
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -184,6 +228,53 @@ export function PaymentSplitter() {
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <Dialog open={isSavePresetOpen} onOpenChange={setIsSavePresetOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" size="sm" className="text-xs">
+                                                <Save className="h-3 w-3 mr-1" />
+                                                Save
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Save Preset</DialogTitle>
+                                                <DialogDescription>
+                                                    Save current recipients configuration for later use.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="name">Preset Name</Label>
+                                                    <Input
+                                                        id="name"
+                                                        value={presetName}
+                                                        onChange={(e) => setPresetName(e.target.value)}
+                                                        placeholder="My Split"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button onClick={handleSavePreset}>Save Preset</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    {presets.length > 0 && (
+                                        <Select onValueChange={handleLoadPreset}>
+                                            <SelectTrigger className="w-[130px] h-8 text-xs">
+                                                <FolderOpen className="h-3 w-3 mr-2" />
+                                                <SelectValue placeholder="Load Preset" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {presets.map((preset) => (
+                                                    <SelectItem key={preset.id} value={preset.id}>
+                                                        {preset.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -192,15 +283,31 @@ export function PaymentSplitter() {
                                     >
                                         Distribute Evenly
                                     </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleClearAll}
-                                        className="text-xs text-destructive hover:text-destructive"
-                                    >
-                                        <Trash2 className="h-3 w-3 mr-1" />
-                                        Clear All
-                                    </Button>
+
+                                    <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-xs text-destructive hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                Clear
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Clear All?</DialogTitle>
+                                                <DialogDescription>
+                                                    This will reset all recipients and amounts. This action cannot be undone.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <DialogFooter>
+                                                <Button variant="ghost" onClick={() => setIsClearDialogOpen(false)}>Cancel</Button>
+                                                <Button variant="destructive" onClick={handleClearAll}>Clear All</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
                                     {recipients.length < 5 && (
                                         <Button
                                             variant="outline"

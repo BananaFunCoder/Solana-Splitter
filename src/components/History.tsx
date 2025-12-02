@@ -1,12 +1,28 @@
+import { useState } from 'react';
 import { useStorage } from '@/context/StorageContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getExplorerUrl } from '@/lib/solana';
-import { ExternalLink, Trash2, Clock, CheckCircle, XCircle, Download } from 'lucide-react';
+import { ExternalLink, Trash2, Clock, CheckCircle, XCircle, Download, FileJson } from 'lucide-react';
 import { truncateAddress } from '@/lib/validation';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 export function TransactionHistory() {
     const { history, clearHistory } = useStorage();
+    const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+
+    const handleClearHistory = () => {
+        clearHistory();
+        setIsClearDialogOpen(false);
+    };
 
     if (history.length === 0) {
         return (
@@ -50,18 +66,56 @@ export function TransactionHistory() {
         document.body.removeChild(link);
     };
 
+    const handleExportJSON = () => {
+        if (history.length === 0) return;
+
+        const jsonContent = JSON.stringify(history, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `solana_splitter_history_${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Transaction History</h2>
-                <Button variant="destructive" size="sm" onClick={clearHistory} className="gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Clear History
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                </Button>
+
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
+                        <Download className="h-4 w-4" />
+                        CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportJSON} className="gap-2">
+                        <FileJson className="h-4 w-4" />
+                        JSON
+                    </Button>
+                    <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="destructive" size="sm" className="gap-2">
+                                <Trash2 className="h-4 w-4" />
+                                Clear
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Clear History?</DialogTitle>
+                                <DialogDescription>
+                                    This will permanently delete your transaction history. This action cannot be undone.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setIsClearDialogOpen(false)}>Cancel</Button>
+                                <Button variant="destructive" onClick={handleClearHistory}>Clear History</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div className="grid gap-4">

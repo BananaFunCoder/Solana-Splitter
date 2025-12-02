@@ -39,6 +39,12 @@ export function AddressBook() {
         if (editingId) {
             updateContact(editingId, { name, address });
         } else {
+            // Check for duplicates
+            const isDuplicate = contacts.some(c => c.address === address);
+            if (isDuplicate) {
+                setError('This address is already in your contacts');
+                return;
+            }
             addContact({ name, address });
         }
         resetForm();

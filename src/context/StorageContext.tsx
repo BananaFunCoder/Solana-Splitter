@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Recipient } from '@/lib/solana';
+import type { Recipient } from '@/lib/solana';
 
 export interface TransactionRecord {
     id: string;
@@ -16,6 +16,12 @@ export interface Contact {
     address: string;
 }
 
+export interface Preset {
+    id: string;
+    name: string;
+    recipients: Recipient[];
+}
+
 interface StorageContextType {
     history: TransactionRecord[];
     addToHistory: (record: Omit<TransactionRecord, 'id' | 'timestamp'>) => void;
@@ -24,6 +30,9 @@ interface StorageContextType {
     addContact: (contact: Omit<Contact, 'id'>) => void;
     removeContact: (id: string) => void;
     updateContact: (id: string, contact: Partial<Contact>) => void;
+    presets: Preset[];
+    addPreset: (preset: Omit<Preset, 'id'>) => void;
+    removePreset: (id: string) => void;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -31,11 +40,13 @@ const StorageContext = createContext<StorageContextType | undefined>(undefined);
 export function StorageProvider({ children }: { children: React.ReactNode }) {
     const [history, setHistory] = useState<TransactionRecord[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [presets, setPresets] = useState<Preset[]>([]);
 
     // Load from local storage on mount
     useEffect(() => {
         const savedHistory = localStorage.getItem('solana-splitter-history');
         const savedContacts = localStorage.getItem('solana-splitter-contacts');
+        const savedPresets = localStorage.getItem('solana-splitter-presets');
 
         if (savedHistory) {
             try {
@@ -52,6 +63,14 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 console.error('Failed to parse contacts', e);
             }
         }
+
+        if (savedPresets) {
+            try {
+                setPresets(JSON.parse(savedPresets));
+            } catch (e) {
+                console.error('Failed to parse presets', e);
+            }
+        }
     }, []);
 
     // Save to local storage whenever state changes
@@ -62,6 +81,10 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         localStorage.setItem('solana-splitter-contacts', JSON.stringify(contacts));
     }, [contacts]);
+
+    useEffect(() => {
+        localStorage.setItem('solana-splitter-presets', JSON.stringify(presets));
+    }, [presets]);
 
     const addToHistory = (record: Omit<TransactionRecord, 'id' | 'timestamp'>) => {
         const newRecord: TransactionRecord = {
@@ -92,6 +115,18 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         setContacts(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     };
 
+    const addPreset = (preset: Omit<Preset, 'id'>) => {
+        const newPreset: Preset = {
+            ...preset,
+            id: crypto.randomUUID(),
+        };
+        setPresets(prev => [...prev, newPreset]);
+    };
+
+    const removePreset = (id: string) => {
+        setPresets(prev => prev.filter(p => p.id !== id));
+    };
+
     return (
         <StorageContext.Provider value={{
             history,
@@ -100,7 +135,10 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             contacts,
             addContact,
             removeContact,
-            updateContact
+            updateContact,
+            presets,
+            addPreset,
+            removePreset
         }}>
             {children}
         </StorageContext.Provider>
