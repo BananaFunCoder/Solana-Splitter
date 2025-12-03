@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { useStorage, Preset } from '@/context/StorageContext';
+import { useStorage } from '@/context/StorageContext';
 import { usePrice } from '@/context/PriceContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,12 @@ import { Label } from '@/components/ui/label';
 import { RecipientInput } from './RecipientInput';
 import { TransactionStatus, type TransactionState } from './TransactionStatus';
 import { WalletButton } from './WalletButton';
+import { PresetManager } from './PresetManager';
+import { CSVImporter } from './CSVImporter';
 import type { Recipient } from '@/lib/solana';
 import { buildSplitTransaction, solToLamports, validateSolanaAddress } from '@/lib/solana';
 import { validateRecipients, validateAmount } from '@/lib/validation';
-import { Plus, Send, Trash2, Save, FolderOpen } from 'lucide-react';
+import { Plus, Send, Trash2 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -22,18 +24,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
 export function PaymentSplitter() {
     const { connection } = useConnection();
     const { publicKey, sendTransaction, connected } = useWallet();
-    const { addToHistory, presets, addPreset } = useStorage();
+    const { addToHistory } = useStorage();
     const { price: solPrice } = usePrice();
     const [amount, setAmount] = useState('');
     const [recipients, setRecipients] = useState<Recipient[]>([
@@ -43,8 +38,6 @@ export function PaymentSplitter() {
     const [transactionState, setTransactionState] = useState<TransactionState>('idle');
     const [signature, setSignature] = useState<string>();
     const [error, setError] = useState<string>();
-    const [presetName, setPresetName] = useState('');
-    const [isSavePresetOpen, setIsSavePresetOpen] = useState(false);
     const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
     const handleAddRecipient = useCallback(() => {
@@ -101,21 +94,18 @@ export function PaymentSplitter() {
         setIsClearDialogOpen(false);
     }, []);
 
-    const handleSavePreset = () => {
-        if (!presetName.trim()) return;
-        addPreset({
-            name: presetName,
-            recipients: recipients
-        });
-        setPresetName('');
-        setIsSavePresetOpen(false);
+    const handleLoadPreset = (newRecipients: Recipient[]) => {
+        setRecipients(newRecipients);
+        setError(undefined);
     };
 
-    const handleLoadPreset = (presetId: string) => {
-        const preset = presets.find(p => p.id === presetId);
-        if (preset) {
-            setRecipients(preset.recipients);
-        }
+    const handleCSVImport = (newRecipients: Recipient[]) => {
+        setRecipients(newRecipients);
+        setError(undefined);
+    };
+
+    const handleCSVError = (msg: string) => {
+        setError(msg);
     };
 
     const handleSendPayment = async () => {
@@ -228,52 +218,15 @@ export function PaymentSplitter() {
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Dialog open={isSavePresetOpen} onOpenChange={setIsSavePresetOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-xs">
-                                                <Save className="h-3 w-3 mr-1" />
-                                                Save
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Save Preset</DialogTitle>
-                                                <DialogDescription>
-                                                    Save current recipients configuration for later use.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <div className="grid gap-4 py-4">
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="name">Preset Name</Label>
-                                                    <Input
-                                                        id="name"
-                                                        value={presetName}
-                                                        onChange={(e) => setPresetName(e.target.value)}
-                                                        placeholder="My Split"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <Button onClick={handleSavePreset}>Save Preset</Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
+                                    <PresetManager
+                                        currentRecipients={recipients}
+                                        onLoad={handleLoadPreset}
+                                    />
 
-                                    {presets.length > 0 && (
-                                        <Select onValueChange={handleLoadPreset}>
-                                            <SelectTrigger className="w-[130px] h-8 text-xs">
-                                                <FolderOpen className="h-3 w-3 mr-2" />
-                                                <SelectValue placeholder="Load Preset" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {presets.map((preset) => (
-                                                    <SelectItem key={preset.id} value={preset.id}>
-                                                        {preset.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
+                                    <CSVImporter
+                                        onImport={handleCSVImport}
+                                        onError={handleCSVError}
+                                    />
 
                                     <Button
                                         variant="outline"
